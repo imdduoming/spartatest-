@@ -70,26 +70,12 @@
                 $("#btn-post-box").text("포스팅 박스 닫기");
             }
         }
-        let idx = 0;
+
         function postArticle() {
-            console.log(idx+1)
+
             let url = $('#post-url').val();
             let comment = $('#post-comment').val();
 
-            let today = new Date();
-
-            let year = today.getFullYear();
-            let month = ('0' + (today.getMonth() + 1)).slice(-2);
-            let day = ('0' + today.getDate()).slice(-2);
-
-
-
-
-            let hours = ('0' + today.getHours()).slice(-2);
-            let minutes = ('0' + today.getMinutes()).slice(-2);
-            let seconds = ('0' + today.getSeconds()).slice(-2);
-
-            let date = year + '.' + month  + '.' + day+ ' '+hours + ':' + minutes  + ':' + seconds;
 
 
 
@@ -97,7 +83,7 @@
             $.ajax({
                 type: "POST",
                 url: "/post",
-                data: {title_give: url,idx_give:idx, content_give: comment ,time_give:date},
+                data: {title_give: url, content_give: comment},
                 success: function (response) {
                     if (response["result"] == "success") {
                         alert(response["msg"]);
@@ -119,7 +105,7 @@
                         let articles = response['articles'];
 
                         for (let i = 0; i < articles.length; i++) {
-                            let idx=i+1
+                            let idx=articles[i]['idx']
                             let title = articles[i]['title'];
                             let content = articles[i]['content']
                             let date = articles[i]['reg_date']
@@ -132,7 +118,7 @@
                                                   <th scope="col">${idx}</th>
                                                   <th scope="col">${title}</th>
                                                   <th scope="col">${date}</th>
-                                                  <th scope="col"><button type="button" class="btn btn-primary" id="idx" onclick="deleteArticle()">삭제</button></th>
+                                                  <th scope="col"><button type="button" class="btn btn-primary" id="idx" onclick="deleteArticle(${idx})">삭제</button></th>
                                             </tr>`
                             $('#list-post').append(temp_html)
                         }
@@ -150,14 +136,19 @@
 
         function deleteArticle(idx) {
              $.ajax({
-                    type: 'POST',
-                    url: '/post',
-                    data: {idx_give:idx},
+                    type: 'DELETE',
+                    url: '/post?idx='+idx,
                     success: function (response) {
-                        alert(response['msg']);
-                        window.location.reload()
+                       if (response["result"] == "success")
+                       {
+                            alert("삭제 성공!");
+                            // 3. 성공 시 페이지 새로고침하기
+                            window.location.reload();
+                        }
+                       else {
+                            alert("서버 오류!");
                     }
-                });
+                }});
 
 
         }

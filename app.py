@@ -1,46 +1,66 @@
 
 from flask import Flask, render_template, jsonify, request
-import requests
-from bs4 import BeautifulSoup
+from pymongo import MongoClient
+
+from datetime import datetime
 
 
 app = Flask(__name__)
 
-import requests
-from bs4 import BeautifulSoup
+client = MongoClient("mongodb://localhost:27017/")
+db = client.dbtest
 
-from pymongo import MongoClient
-client = MongoClient('localhost', 27017)
-db = client.dbStock
-## HTML을 주는 부분
+
 @app.route('/')
-def home():
-   return render_template('index.html')
+def index():
+    return render_template('index2.html')
 
 
-@app.route('/base/codes',method=['GET'])
-def get_group_db():
-    #db로부터 group 중복 제거해서 list 만들기
-    codes=list(db.codes.find({}).distinct('group'))
-    return jsonify(codes)
+@app.route('/post', methods=['POST'])
+def save_post():
+    title_receive = request.form['title_give']
+    content_receive = request.form['content_give']
 
-@app.route('/codes',method=['GET'])
-def get_group_value():
-    group=request.args.get('group')
-    codes = list(db.codes.find({'group':group},{'_id': False}))
-    #group을 찾아서 나열
-    return jsonify(codes)
+    post_count = db.test2.count()
+    if post_count == 0:
+        max_value = 1
+    else:
+        #idx 역순대로 정렬해서 idx 따온 후 +1
+        max_value = db.test2.find_one(sort=[("idx", -1)])['idx'] + 1
 
-@app.route('/stocks', methods=['POST'])
+    doc = {
+        'title': title_receive,
+        'content': content_receive,
+        'reg_date': datetime.now(),
+        'idx':max_value
+
+    }
+    db.test2.insert_one(doc)
+
+    return {"result": "success",'msg':'저장완료'}
 
 
 
+@app.route('/post', methods=['GET'])
+def get_post():
+    #날짜 큰 순대로 정렬
+    articles = list(db.test2.find({}, {'_id': False}).sort([("reg_date", -1)]))
+    for a in articles:
+        print(a['reg_date'])
+        a['reg_date'] = a['reg_date'].strftime('%Y.%m.%d %H:%M:%S')
+
+    return {"result": "success","articles":articles}
 
 
+@app.route('/post', methods=['DELETE'])
+def delete_post():
+    idx = request.args.get('idx')
+    print(idx)
+    db.test2.delete_one({'idx': int(idx)})
+
+    return {"result":'success',"msg": "삭제되었습니다"}
 
 
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
 
-
-
-if __name__ == '__main__':
-   app.run('0.0.0.0',port=5000,debug=True)
