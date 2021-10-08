@@ -15,7 +15,7 @@ db = client.dbStock
 ## HTML을 주는 부분
 @app.route('/')
 def home():
-   return render_template('index.html')
+   return render_template('test1.html')
 
 
 @app.route('/base/codes',method=['GET'])
