@@ -11,7 +11,7 @@ db = client.dbStock
 
 @app.route('/')
 def index():
-    return render_template('test4.html')
+    return render_template('test3.html')
 
 
 @app.route('/article', methods=['POST'])
@@ -79,15 +79,6 @@ def update_read_count(idx):
     article = db.article.find_one({'idx': int(idx)}, {'_id': False})
     return jsonify({"article": article})
 
-@app.route('/search', methods=['GET'])
-def search_post():
-    if request.method == 'GET':
-        want = request.form.get('title')
-
-        post = db.article.find({"title": want}, {'_id': False})
-
-        post=list(post)
-        return jsonify({"post":post })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000,debug=True)
+    app.run(host="0.0.0.0", port=5000)
