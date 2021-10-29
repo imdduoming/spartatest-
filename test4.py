@@ -38,15 +38,37 @@ def save_post():
 @app.route('/articles', methods=['GET'])
 def get_posts():
     order = request.args.get('order')
+    per_page = request.args.get('perPage')
+    cur_page = request.args.get('curPage')
+    search_title = request.args.get('searchTitle')
+    search_condition = {}
+    if search_title is not None:
+        search_condition = {"title": {"$regex": search_title}}
+
+    limit = int(per_page)
+    skip = limit * (int(cur_page) - 1)
+    total_count = db.article.find(search_condition).count()
+    total_page = int(total_count / limit) + (1 if total_count % limit > 0 else 0)
+
     if order == "desc":
-        articles = list(db.article.find({}, {'_id': False}).sort([("read_count", -1)]))
+        articles = list(db.article.find(search_condition, {'_id': False})
+                        .sort([("read_count", -1)]).skip(skip).limit(limit))
     else:
-        articles = list(db.article.find({}, {'_id': False}).sort([("reg_date", -1)]))
+        articles = list(db.article.find(search_condition, {'_id': False})
+                        .sort([("reg_date", -1)]).skip(skip).limit(limit))
 
     for a in articles:
         a['reg_date'] = a['reg_date'].strftime('%Y.%m.%d %H:%M:%S')
 
-    return jsonify({"articles": articles})
+    paging_info = {
+        "totalCount": total_count,
+        "totalPage": total_page,
+        "perPage": per_page,
+        "curPage": cur_page,
+        "searchTitle": search_title
+    }
+
+    return jsonify({"articles": articles, "pagingInfo": paging_info})
 
 
 @app.route('/article', methods=['DELETE'])
@@ -79,15 +101,7 @@ def update_read_count(idx):
     article = db.article.find_one({'idx': int(idx)}, {'_id': False})
     return jsonify({"article": article})
 
-@app.route('/search', methods=['GET'])
-def search_post():
-    if request.method == 'GET':
-        want = request.form.get('title')
 
-        post = db.article.find({"title": want}, {'_id': False})
-
-        post=list(post)
-        return jsonify({"post":post })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000,debug=True)
